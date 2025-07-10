@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IP Info & 3D Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    input, button, select {
+      padding: 12px;
+      margin: 10px;
+      border-radius: 8px;
+      border: 2px solid #00ffd5;
+      background: #111;
+      color: #0f0;
+      font-size: 16px;
+      width: 90%;
+      max-width: 400px;
+    }
+    button:hover {
+      background: #00ffd5;
+      color: #000;
+    }
+    #info, #deviceInfo {
+      margin-top: 20px;
+      text-align: left;
+      background: #111;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid #00ffd5;
+    }
+    #map {
+      height: 400px;
+      margin-top: 20px;
+      border: 2px solid #00ffd5;
+      border-radius: 10px;
+    }
+    .footer {
+      margin-top: 40px;
+      color: #ccc;
+      font-size: 14px;
+    }
+    .footer a {
+      color: #00ffd5;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌍 IP INFO AND 3D MAP BY PROFESSOR</h1>
+  <input type="text" id="ip" placeholder="Enter IP address (e.g. 8.8.8.8)" />
+  <select id="mapStyle">
+    <option value="normal">🗺 Normal Map</option>
+    <option value="satellite">🌌 Satellite</option>
+  </select>
+  <button onclick="lookupIP()">Lookup IP</button>
+  <div id="info"></div>
+  <div id="deviceInfo"></div>
+  <div id="map"></div>
+
+  <div class="footer">
+    Developer: <strong>PROFESSOR-HACKER</strong><br />
+    <a href="htt<<https://whatsapp.com/channel/0029Vb6mVId5fM5ZiYXtrb0h" target="_blank">💚 Join WhatsApp Channel</a>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    let map;
+    function lookupIP() {
+      const ip = document.getElementById("ip").value.trim();
+      if (!ip) return alert("Enter a valid IP address");
+
+      fetch("https://ipwho.is/" + ip)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            document.getElementById("info").innerHTML = `<p style='color:red;'>❌ Error: ${data.message || "Invalid IP"}</p>`;
+            return;
+          }
+          document.getElementById("info").innerHTML = `
+            <h3>📍 Location Details</h3>
+            <p><strong>IP:</strong> ${data.ip}</p>
+            <p><strong>Country:</strong> ${data.country}</p>
+            <p><strong>Region:</strong> ${data.region}</p>
+            <p><strong>City:</strong> ${data.city}</p>
+            <p><strong>ZIP:</strong> ${data.postal}</p>
+            <p><strong>ISP:</strong> ${data.connection?.isp || 'Unknown'}</p>
+            <p><strong>Proxy/VPN:</strong> ${data.security?.proxy ? 'Yes' : 'No'}</p>
+            <p><strong>Coordinates:</strong> ${data.latitude}, ${data.longitude}</p>
+          `;
+
+          if (map) map.remove();
+          map = L.map("map").setView([data.latitude, data.longitude], 13);
+
+          const style = document.getElementById("mapStyle").value;
+          let tileUrl = style === "satellite"
+            ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+          L.tileLayer(tileUrl, {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap / Esri World Imagery'
+          }).addTo(map);
+
+          const marker = L.marker([data.latitude, data.longitude]).addTo(map);
+          marker.bindPopup(`<b>${data.city}, ${data.country}</b><br>IP: ${data.ip}`).openPopup();
+        })
+        .catch(err => {
+          document.getElementById("info").innerHTML = `<p style='color:red;'>❌ Error: ${err.message}</p>`;
+        });
+    }
+
+    function showDeviceInfo() {
+      const ua = navigator.userAgent;
+      const platform = navigator.platform;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      const deviceDiv = document.getElementById("deviceInfo");
+      deviceDiv.innerHTML = `<h3>📱 Device Info</h3>
+        <p><strong>User Agent:</strong> ${ua}</p>
+        <p><strong>Platform:</strong> ${platform}</p>
+        <p><strong>Screen:</strong> ${width} x ${height}</p>`;
+
+      if ('getBattery' in navigator) {
+        navigator.getBattery().then(battery => {
+          const level = Math.round(battery.level * 100);
+          deviceDiv.innerHTML += `<p><strong>Battery:</strong> ${level}%</p>`;
+        });
+      } else {
+        deviceDiv.innerHTML += `<p><strong>Battery:</strong> Not Supported</p>`;
+      }
+
+      if ('connection' in navigator) {
+        const type = navigator.connection.effectiveType;
+        deviceDiv.innerHTML += `<p><strong>Network:</strong> ${type.toUpperCase()}</p>`;
+      } else {
+        deviceDiv.innerHTML += `<p><strong>Network:</strong> Not Supported</p>`;
+      }
+    }
+
+    window.onload = showDeviceInfo;
+  </script>
+</body>
+</html>
